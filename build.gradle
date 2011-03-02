@@ -1,0 +1,43 @@
+apply plugin: 'java'
+apply plugin: 'osgi'
+apply plugin: 'war'
+apply plugin: 'jetty'
+apply plugin: 'eclipse'
+
+version="0.1"
+//archivesBaseName = 'webtest'
+group = 'net.jetztgrad'
+
+repositories {
+	flatDir(dirs: "$projectDir/lib")
+	mavenCentral()
+}
+
+dependencies {
+	providedCompile "javax.servlet:servlet-api:2.5"
+    testCompile "junit:junit:4.8.2"
+}
+
+// jetty http port
+httpPort=9091
+
+jar.enabled=true
+
+jar {
+	manifest { // the manifest of the default jar is of type OsgiManifest
+		instruction 'Web-ContextPath', '/'
+		instruction 'Import-Package', '*'
+	}
+}
+
+war {
+	manifest = osgiManifest { // the manifest of the default jar is of type OsgiManifest
+		instruction 'Web-ContextPath', '/'
+		instruction 'Import-Package', '*'
+	}
+	/*
+	manifest { // the manifest of the default jar is of type OsgiManifest
+		attributes ('Bundle-SymbolicName': baseName, 'Bundle-Version': version, 'Web-ContextPath': '/')
+	}
+	*/
+}

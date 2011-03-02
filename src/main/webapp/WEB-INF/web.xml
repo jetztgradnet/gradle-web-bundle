@@ -1,0 +1,17 @@
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" version="2.4"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http:/java.sun.com/dtd/web-app_2_3.dtd">
+	<servlet>
+		<servlet-name>test</servlet-name>
+		<servlet-class>net.jetztgrad.web.TestServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>test</servlet-name>
+		<url-pattern>/test</url-pattern>
+	</servlet-mapping>
+	
+	<welcome-file-list>
+			<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+</web-app>
