@@ -1,0 +1,67 @@
+Failed to create MANIFEST when building a web app as OSGi bundle
+
+I'm building a web app as OSGi bundle (web bundle), so I use both the OSGi and war plugins. Both Gradle 0.9.2 and 1.0-milestone-1 fail to build the war's MANIFEST.MF when called like this:
+
+war {
+	manifest = osgiManifest {
+		instruction 'Web-ContextPath', '/'
+		instruction 'Import-Package', '*'
+	}
+}
+
+
+* What went wrong:
+Could not copy MANIFEST.MF to '/Users/wolfgang/dev/workspaces/grails/gradle-web-bundle/build/tmp/war/MANIFEST.MF'.
+
+* Exception is:
+org.gradle.api.GradleException: Could not copy MANIFEST.MF to '/Users/wolfgang/dev/workspaces/grails/gradle-web-bundle/build/tmp/war/MANIFEST.MF'.
+	at org.gradle.api.internal.file.AbstractFileTreeElement.copyTo(AbstractFileTreeElement.java:65)
+	at org.gradle.api.internal.file.MapFileTree$FileVisitDetailsImpl.getFile(MapFileTree.java:125)
+...[snip]...
+Caused by: java.lang.NullPointerException
+	at aQute.lib.osgi.Jar.getName(Jar.java:65)
+	at aQute.lib.osgi.Jar.<init>(Jar.java:55)
+	at aQute.lib.osgi.Analyzer.setJar(Analyzer.java:699)
+	at org.gradle.api.internal.plugins.osgi.DefaultOsgiManifest.setAnalyzerProperties(DefaultOsgiManifest.java:90)
+	at org.gradle.api.internal.plugins.osgi.DefaultOsgiManifest.getEffectiveManifest(DefaultOsgiManifest.java:64)
+	at org.gradle.api.java.archives.internal.DefaultManifest.writeTo(DefaultManifest.java:152)
+	at org.gradle.api.java.archives.internal.DefaultManifest.writeTo(DefaultManifest.java:36)
+	at org.gradle.api.java.archives.Manifest$writeTo.call(Unknown Source)
+	at org.gradle.api.tasks.bundling.Jar$_closure1_closure3.doCall(Jar.groovy:47)
+	at org.gradle.api.internal.file.MapFileTree$FileVisitDetailsImpl.copyTo(MapFileTree.java:143)
+	at org.gradle.api.internal.file.AbstractFileTreeElement.copyFile(AbstractFileTreeElement.java:72)
+	at org.gradle.api.internal.file.AbstractFileTreeElement.copyTo(AbstractFileTreeElement.java:60)
+	... 40 more
+
+
+BUILD FAILED
+
+Total time: 1.613 secs
+
+When looking into Bnd's and Gradle's code it seems, that DefaultOsgiManifest's classesDir is not set, so Bnd fails when to analyze the class files. (see DefaultOsgiManifest#setAnalyzerProperties() at https://github.com/gradle/gradle/blob/master/subprojects/osgi/src/main/groovy/org/gradle/api/internal/plugins/osgi/DefaultOsgiManifest.java#L90)  
+
+If I don't use the OSGi plugin at this place, it works:
+
+war {
+	manifest {
+		attributes ('Bundle-SymbolicName': baseName, 'Bundle-Version': version, 'Web-ContextPath': '/')
+	}
+}
+
+But obviously I have to set all bundle headers myself.
+
+Using the same code for a bundle (jar file) works without problems:
+
+jar {
+	manifest {
+		instruction 'Web-ContextPath', '/'
+		instruction 'Import-Package', '*'
+	}
+}
+
+
+So basically it seems that a call to DefaultOsgiManifest#setClassesDir() is omitted, maybe because a web app's classes are located at a different location as a normal jar.
+
+I posted an example project at https://github.com/jetztgradnet/gradle-web-bundle.
+
+For my simple test case I can live with the workaround, as I don't need Bnd to calculate imports or exports, but for real web bundles, this is a problems that needs to be resolved. Should I create a JIRA?
